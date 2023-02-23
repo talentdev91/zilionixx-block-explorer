@@ -1,0 +1,67 @@
+import React from 'react'
+import { useParams } from 'react-router'
+import { connect } from 'react-redux'
+import { AppState } from '../../../../store/configureStore'
+import { getContractInfo } from '../../../../store/actions/address'
+import SimpleTabs from '../../../Resource/TopStatistics/components/Tab/SimpleTabs'
+import ReadContract from './ReadContract'
+import WriteContract from './WriteContract'
+import { nanoid } from 'nanoid'
+
+interface ContractProps {
+  getContractInfo: (address: any) => void
+  loading: boolean
+  contractIsVerified: boolean
+  contractIsExist: boolean
+}
+
+function Contract({ getContractInfo, loading, contractIsVerified }: ContractProps) {
+  const { tokenAddress } = useParams<any>()
+  var val = 0
+  var initContent:
+    | { children?: React.ReactNode; label: any; index: any; suburl: string }[]
+    | { id: string; children: JSX.Element; label: string; index: number; suburl: string }[] = []
+  const [content, setContent] = React.useState(initContent)
+  React.useEffect(() => {
+    getContractInfo(tokenAddress)
+    if (!loading) {
+      if (contractIsVerified) {
+        setContent([
+          {
+            id: nanoid(),
+            children: <ReadContract />,
+            label: 'Read Contract',
+            index: 0,
+            suburl: 'readContract',
+          },
+          {
+            id: nanoid(),
+            children: <WriteContract />,
+            label: 'Write Contract',
+            index: 1,
+            suburl: 'writeContract',
+          },
+        ])
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenAddress, loading, getContractInfo])
+
+  return !loading ? (
+    contractIsVerified ? (
+      <SimpleTabs val={val} tabs={content} />
+    ) : (
+      <div>This contract is not verified yet</div>
+    )
+  ) : (
+    <div>Loading...</div>
+  )
+}
+
+const mapStateToProps = (state: AppState) => ({
+  loading: state.address.loadingContract,
+  contractIsVerified: state.address.contractIsVerified,
+  contractIsExist: state.address.contractIsExist,
+})
+
+export default connect(mapStateToProps, { getContractInfo })(Contract)
